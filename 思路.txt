@@ -1,0 +1,18 @@
+一、熟练掌握如何增加系统调用
+	1、原理
+	2、具体操作
+	
+二、实现给定的四个函数
+	1、sleep
+		具体实现思路：
+		1>注册SIGALRM信号的处理函数；
+		2>调用alarm(nsecs)设定闹钟；
+		3>调⽤pause等待,内核切换到别的进程运行；
+		4>nsecs秒之后,闹钟超时,内核发SIGALRM给这个		进程 ;
+		5>从内核态返回这个进程的⽤户态之前处理未决信		号,发现有SIGALRM信号,其处理函数是sig_alrm;
+		6> 切换到用户态执行sig_alrm函数,进⼊sig_alrm		函数时SIGALRM信号被⾃动屏蔽,从sig_alrm函数		返回SIGALRM信 号⾃动解除屏蔽。然后⾃动执⾏		系统调用sigreturn再次进入内核,再返回用户态继续		执行进程的主控制流程(main函数调⽤的mysleep		函数)；
+		7>pause函数返回-1,然后调⽤alarm(0)取消闹钟,		调⽤sigaction恢复SIGALRM信号以前的处理动作		。
+	2、getcwd
+	3、getdents
+	4、execve2
+三、反思总结

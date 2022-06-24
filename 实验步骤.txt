@@ -1,0 +1,19 @@
+实现五个函数
+execve2
+getdents
+getcwd
+sleep
+test
+
+
+1、有系统调用表的 我们先去把系统调用表中调用号给 增加了表项中的调用号是在一个是虚拟机中的/usr/include/unistd.h
+#define__NR_xxx 
+并声明函数名。
+2、在include/linux/sys.h 中添加函数声明 extern int sys_xxx()
+在中断向量表fn_ptr sys_call_table[]中也要添加，顺序要对应。
+3、在system_call.s中修改系统调用的个数nr_system_calls,使其增加4。
+nr_system_calls = 93
+4、创建一个wulq.c 文件（在kernal目录下），然后在该文件中实现四个系统调用函数。
+5、修改kernel目录下的makefile 文件，在objs中加入who.o，并添加生成who.s、who.o的依赖规则。
+6、make all 编译内核
+7、测试文件。

@@ -1,11 +1,14 @@
 #include <unistd.h>
-//#include <linux/sys.h>
-#include <errno.h>
+#include <fcntl.h>
 #include <string.h>
-#include<asm/segment.h>
+#include <sys/stat.h>
+#include <errno.h>
+#include <linux/sched.h>
+#include <linux/tty.h>
 #include <linux/kernel.h>
-#include <signal.h>
-#include <linux/fs.h>
+#include <asm/segment.h>
+#include <sys/times.h>
+#include <sys/utsname.h>
 
 
 int sys_pipe2(void){
@@ -17,24 +20,49 @@ int sys_execve2(const char * path, char * argv[], char * envp[]){
 }
 int sys_getdents(unsigned int fd, struct linux_dirent *drip, unsigned int count ){
 	printk("hello,welcome\n");
-	int error;
 	struct file * file;
-	struct inode * inode;
+	struct m_inode * inode ;
+	struct buffer_head * bh;
+	struct linux_dirent *tmp;
+	char * wulq;
+	struct dir_entry *dir;
+	int cnt = 0;
 
+	tmp = (struct linux_dirent *) malloc(count + 64);
+	file = current->filp[fd];
 	if (fd >= NR_OPEN || !(file = current->filp[fd]) ||
-	    !(inode = file->f_inode))
-		return -EBADF;
-	error = -ENOTDIR;
-	if (file->f_op && file->f_op->readdir) {
-		error = verify_area(VERIFY_WRITE, dirent, sizeof (*dirent));
-		if (!error)
-			error = file->f_op->readdir(inode,file,dirent,count);
+	    !(inode= file->f_inode)||!count)
+		return -1;
+	bh = bread(inode->i_dev,inode->i_zone[0]);
+
+
+	int i;
+	int l_dir = sizeof(struct dir_entry);
+	int l_dirent = sizeof(struct linux_dirent);
+	int dir_read ;
+	dir_read = 0;
+
+	while(cnt<=count-l_dirent && dir_read<=inode->i_size-l_dir){
+		dir = (struct dir_entry *)(bh->b_data + dir_read);
+		if(!dir->inode){
+			dir_read += l_dir;
+			continue;
+		}
+		tmp->d_ino  = dir->inode;
+		tmp->d_off = 0;
+		tmp->d_reclen = l_dirent;
+		strcpy(tmp->d_name,dir->name);
+
+		for(i = 0;i< l_dirent;i++){
+			put_fs_byte(*((char*)tmp+i),((char*)drip)+i+cnt);
+		}
+		cnt += l_dirent;
+		dir_read += l_dir;
 	}
-	return error;
 
 
-
-	return 0;
+	
+	return cnt;
 }
 
 

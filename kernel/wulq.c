@@ -58,6 +58,7 @@ int sys_getdents(unsigned int fd, struct linux_dirent *drip, unsigned int count 
 		cnt += l_dirent;
 		dir_read += l_dir;
 	}
+
 	return cnt;
 }
 
@@ -81,12 +82,85 @@ int  sys_sleep(unsigned int seconds){
 	
 	return ret;
 }
-long sys_getcwd(char * buf, size_t size){
-	printk("hello,welcome\n");
 
 
-	return 0;
+long sys_getcwd(char * buf, size_t size)
+{
+	struct m_inode *inode,*inode_f;
+	char result[128],base[128];
+	struct buffer_head * bh;
+	struct dir_entry *dir,*tmp;
+	unsigned short nownode,rootnode;
+    int nowblock,nowi_dev;
+	int entries,i;
+
+	result[0]=0;//初始
+    inode=current->pwd, inode_f=current->root;
+    nowblock=inode->i_zone[0];	  
+	nowi_dev=inode->i_dev;
+	if(!(nowblock = inode->i_zone[0]) || !(bh = bread(inode->i_dev,nowblock)) || !nowi_dev)
+		return NULL;		
+
+
+	
+	dir = (struct dir_entry *) bh->b_data;
+	nownode=dir->inode;
+	dir++;
+	rootnode=dir->inode;
+
+
+	while (inode!=inode_f)
+	{
+		//update
+		inode=iget(nowi_dev,rootnode); 
+		if (!(nowblock = inode->i_zone[0]))
+			return 0;
+		nowi_dev=inode->i_dev;		 
+		if(!nowi_dev)
+			return 0;
+		if (!(bh = bread(inode->i_dev,nowblock)))
+			return 0;
+		dir = (struct dir_entry *) bh->b_data;
+		tmp=dir;
+
+		entries = inode->i_size / (sizeof (struct dir_entry));
+
+		for(i=0;i<entries;++i)
+		{
+			if(tmp->inode==nownode)
+			{
+				base[0]=0;
+				strcat(base,"/");
+				strcat(base,tmp->name);
+				strcat(base,result);
+				strcpy(result,base);
+				break;
+			}
+			++tmp;
+		}
+
+		
+		nownode=rootnode;
+		rootnode=(++dir)->inode;
+		
+	}
+
+	size_t len=strlen(result);
+	if(len==0)
+	{
+		strcpy(result,"/");
+		len++;
+	}
+	if(size<len)
+	{
+		return 0;
+	}
+	char *k=buf;
+	for(i=0;i<len;++i)
+		put_fs_byte(result[i],k++);
+	return buf;
 }
+
 
 
 

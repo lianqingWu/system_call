@@ -35,14 +35,14 @@ int sys_getdents(unsigned int fd, struct linux_dirent *drip, unsigned int count 
 		return -1;
 	bh = bread(inode->i_dev,inode->i_zone[0]);
 
-
+	int size = sizeof(long)+sizeof(off_t)+sizeof(unsigned short);
 	int i;
 	int l_dir = sizeof(struct dir_entry);
-	int l_dirent = sizeof(struct linux_dirent);
+	int l_dirent = size + sizeof(dir->name);
 	int dir_read ;
 	dir_read = 0;
 
-	while(cnt<=count-l_dirent && dir_read<=inode->i_size-l_dir){
+	while(cnt<=count-l_dirent && dir_read<=inode->i_size){
 		dir = (struct dir_entry *)(bh->b_data + dir_read);
 		if(!dir->inode){
 			dir_read += l_dir;
@@ -52,16 +52,12 @@ int sys_getdents(unsigned int fd, struct linux_dirent *drip, unsigned int count 
 		tmp->d_off = 0;
 		tmp->d_reclen = l_dirent;
 		strcpy(tmp->d_name,dir->name);
-
 		for(i = 0;i< l_dirent;i++){
 			put_fs_byte(*((char*)tmp+i),((char*)drip)+i+cnt);
 		}
 		cnt += l_dirent;
 		dir_read += l_dir;
 	}
-
-
-	
 	return cnt;
 }
 

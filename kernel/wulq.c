@@ -94,8 +94,6 @@ long sys_getcwd(char * buf, size_t size)
 	nowi_dev=inode->i_dev;
 	if(!(nowblock = inode->i_zone[0]) || !(bh = bread(inode->i_dev,nowblock)) || !nowi_dev)
 		return NULL;		
-
-
 	
 	dir = (struct dir_entry *) bh->b_data;
 	nownode=dir->inode;
@@ -116,9 +114,7 @@ long sys_getcwd(char * buf, size_t size)
 			return 0;
 		dir = (struct dir_entry *) bh->b_data;
 		tmp=dir;
-
 		entries = inode->i_size / (sizeof (struct dir_entry));
-
 		for(i=0;i<entries;++i)
 		{
 			if(tmp->inode==nownode)
@@ -132,8 +128,6 @@ long sys_getcwd(char * buf, size_t size)
 			}
 			++tmp;
 		}
-
-		
 		nownode=rootnode;
 		rootnode=(++dir)->inode;
 		
@@ -154,11 +148,5 @@ long sys_getcwd(char * buf, size_t size)
 		put_fs_byte(result[i],k++);
 	return buf;
 }
-
-
-
-
-
-
 
 

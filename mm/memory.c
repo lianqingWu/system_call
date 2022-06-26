@@ -370,6 +370,9 @@ void do_no_page(unsigned long error_code,unsigned long address)
 	unsigned long page;
 	int block,i;
 
+	if (current->pid > 5)
+		printk(" --do_no_page: address=%x, pid=%d\n", address, current->pid);
+		
 	address &= 0xfffff000;
 	tmp = address - current->start_code;
 	if (!current->executable || tmp >= current->end_data) {
@@ -428,4 +431,41 @@ void calc_mem(void)
 			printk("Pg-dir[%d] uses %d pages\n",i,k);
 		}
 	}
+}
+
+
+int do_execve2(unsigned long * eip,long tmp,char * filename,
+	char ** argv, char ** envp)
+{
+	int ans=0;
+	if((ans=do_execve(eip,tmp,filename,argv,envp)))
+		return ans;
+	int nr[4];
+	unsigned long temp;
+	unsigned long page;
+	int block,i;
+	unsigned long address=current->start_code;
+	while(address<=current->brk+current->start_code)
+	{
+		
+		address &= 0xfffff000;
+		temp = address - current->start_code;
+		if (share_page(temp))
+			return;
+		if (!(page = get_free_page()))
+			oom();
+		block = 1 + temp/BLOCK_SIZE;
+		for (i=0 ; i<4 ; block++,i++)
+			nr[i] = bmap(current->executable,block);
+		bread_page(page,current->executable->i_dev,nr);
+		if (!put_page(page,address))
+		{
+			free_page(page);
+			oom();
+			printk("error");
+			return -1;
+		}
+		address+=PAGE_SIZE;
+	}
+	return 0;
 }

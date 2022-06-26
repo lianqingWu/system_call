@@ -14,10 +14,14 @@
 int sys_pipe2(void){
 	return 0;
 }
-int sys_execve2(const char * path, char * argv[], char * envp[]){
-	printk("hello,welcome\n");
-	return 0;
-}
+
+
+// int sys_execve2(const char * path, char * argv[],char *envp[]){
+// 	printk("hello,welcome\n");
+// 	return 0;
+// }
+
+
 int sys_getdents(unsigned int fd, struct linux_dirent *drip, unsigned int count ){
 	printk("hello,welcome\n");
 	struct file * file;
@@ -63,23 +67,13 @@ int sys_getdents(unsigned int fd, struct linux_dirent *drip, unsigned int count 
 }
 
 
-void handler(int signo)
-{
-}
 
 int  sys_sleep(unsigned int seconds){
 	printk("hello,welcome\n");
-	struct	sigaction act,oact;
-	act.sa_handler = handler;
-	act.sa_flags = 0;
 	sys_signal(SIGALRM,SIG_IGN,NULL);
-
-	sys_sigaction(SIGALRM,&act,&oact);
 	sys_alarm(seconds);
 	pause();
 	int ret = sys_alarm(0);
-	sys_sigaction(SIGALRM,&oact,NULL);
-	
 	return ret;
 }
 
